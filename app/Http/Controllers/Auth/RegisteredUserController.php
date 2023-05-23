@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules;
 use Illuminate\View\View;
-
+use CloudinaryLabs\CloudinaryLaravel\Facades\Cloudinary;
 class RegisteredUserController extends Controller
 {
     /**
@@ -33,14 +33,20 @@ class RegisteredUserController extends Controller
         $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:'.User::class],
+            'avatar' => ['required', 'file', 'mimes:png,jpeg,jpg'],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
         ]);
+
+        $uploadeFile = $request->file('avatar');
+        $result = Cloudinary::upload($uploadeFile->getRealPath());
+        $imageUrl=$result->getSecurePath();
 
         $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
+            'avatar' =>$imageUrl,
             'password' => Hash::make($request->password),
-        ]);
+        ])->assignRole('client');
 
         event(new Registered($user));
 
